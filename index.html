@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>💰 SparkFlow | Smart Expense Tracker</title>
+    <!-- Chart.js CDN for beautiful graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome 6 (free icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        /* main glassmorphic card container */
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255,255,255,0.5);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* header area */
+        .header {
+            background: linear-gradient(135deg, #1f2b3c, #0f1722);
+            padding: 1.2rem 2rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.9rem;
+            letter-spacing: -0.5px;
+            font-weight: 700;
+        }
+        .logo span {
+            background: #facc15;
+            color: #1e293b;
+            font-size: 0.9rem;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        .user-status {
+            background: rgba(255,255,240,0.15);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-status i {
+            font-size: 1.2rem;
+            color: #facc15;
+        }
+        .logout-btn {
+            background: #ef4444;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: scale(0.96);
+        }
+
+        /* main content grid */
+        .dashboard {
+            padding: 2rem 2rem 2rem 2rem;
+        }
+
+        /* login panel (hidden when logged in) */
+        .login-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 460px;
+            margin: 3rem auto;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+        .login-panel h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #0f172a;
+        }
+        .input-group {
+            margin: 1.2rem 0;
+            text-align: left;
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: 60px;
+            border: 1px solid #cbd5e1;
+            font-size: 1rem;
+            background: white;
+            outline: none;
+            transition: 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+        }
+        .login-btn {
+            background: linear-gradient(95deg, #f97316, #ea580c);
+            width: 100%;
+            border: none;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 60px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .demo-note {
+            margin-top: 1rem;
+            background: #e2e8f0;
+            padding: 8px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            color: #334155;
+        }
+
+        /* main tracker area (hidden until login) */
+        .tracker-area {
+            display: none;
+        }
+
+        /* stats cards */
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            flex: 1;
+            min-width: 170px;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            border-left: 6px solid;
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #475569;
+        }
+        .stat-card .amount {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-top: 8px;
+            word-break: break-word;
+        }
+        .stat-card i {
+            font-size: 1.8rem;
+            float: right;
+            opacity: 0.6;
+        }
+
+        /* charts row */
+        .charts-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+        .chart-box {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            flex: 1;
+            min-width: 260px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        }
+        .chart-box canvas {
+            max-height: 260px;
+            width: 100%;
+        }
+
+        /* add expense form */
+        .form-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+        }
+        .form-field {
+            flex: 1;
+            min-width: 150px;
+        }
+        .form-field label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            color: #334155;
+        }
+        .form-field input, .form-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 50px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+        }
+        .add-btn {
+            background: #10b981;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            height: 46px;
+        }
+        .add-btn:hover {
+            background: #059669;
+            transform: scale(0.98);
+        }
+
+        /* expense list */
+        .expense-list-container {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            max-height: 340px;
+            overflow-y: auto;
+        }
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: 0.1s;
+        }
+        .expense-item:hover {
+            background: #fef9e6;
+        }
+        .expense-desc {
+            font-weight: 600;
+        }
+        .expense-cat {
+            background: #eef2ff;
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            margin-left: 12px;
+        }
+        .expense-amount {
+            font-weight: 800;
+            color: #b91c1c;
+        }
+        .delete-expense {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.6;
+        }
+        .delete-expense:hover {
+            opacity: 1;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.1);
+            color: #1e293b;
+        }
+        @media (max-width: 750px) {
+            .dashboard { padding: 1.2rem; }
+            .stat-card .amount { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="appRoot">
+    <div class="header">
+        <div class="logo">
+            <h1>💰 SparkFlow <span>tracker</span></h1>
+        </div>
+        <div class="user-status" id="userStatusArea">
+            <i class="fas fa-user-circle"></i>
+            <span id="greetingUser">Guest</span>
+            <button id="globalLogoutBtn" class="logout-btn" style="display: none;">Logout</button>
+        </div>
+    </div>
+
+    <!-- LOGIN PANEL (visible when not logged in) -->
+    <div id="loginSection" class="login-panel">
+        <i class="fas fa-chart-line" style="font-size: 3rem; color: #f97316;"></i>
+        <h2>Welcome back</h2>
+        <p style="margin-bottom: 1rem;">Sign in to manage expenses & view insights</p>
+        <div class="input-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" id="loginEmail" placeholder="demo@example.com" value="user@demo.com">
+        </div>
+        <div class="input-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <input type="password" id="loginPassword" placeholder="any password" value="123456">
+        </div>
+        <button id="loginBtn" class="login-btn"><i class="fas fa-sign-in-alt"></i> Login / Signup</button>
+        <div class="demo-note">
+            <i class="fas fa-info-circle"></i> Demo mode: any email+pass works (local storage)
+        </div>
+    </div>
+
+    <!-- MAIN TRACKER DASHBOARD (hidden until login) -->
+    <div id="trackerDashboard" class="tracker-area">
+        <div class="dashboard">
+            <!-- stats cards -->
+            <div class="stats-row">
+                <div class="stat-card" style="border-left-color: #3b82f6;">
+                    <i class="fas fa-wallet"></i>
+                    <h3>Total Balance</h3>
+                    <div class="amount" id="totalBalance">$0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #ef4444;">
+                    <i class="fas fa-arrow-down"></i>
+                    <h3>Total Expenses</h3>
+                    <div class="amount" id="totalExpenses">$0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #10b981;">
+                    <i class="fas fa-chart-simple"></i>
+                    <h3>Total Income</h3>
+                    <div class="amount" id="totalIncome">$0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #facc15;">
+                    <i class="fas fa-layer-group"></i>
+                    <h3>Transactions</h3>
+                    <div class="amount" id="txnCount">0</div>
+                </div>
+            </div>
+
+            <!-- graphs dashboard row -->
+            <div class="charts-row">
+                <div class="chart-box">
+                    <h4><i class="fas fa-chart-pie"></i> Expense by Category</h4>
+                    <canvas id="categoryChart" width="400" height="220" style="max-height: 220px;"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h4><i class="fas fa-chart-line"></i> Weekly Trend (last 7 days)</h4>
+                    <canvas id="trendChart" width="400" height="220" style="max-height: 220px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Add transaction form -->
+            <div class="form-card">
+                <div class="form-field">
+                    <label><i class="fas fa-tag"></i> Description</label>
+                    <input type="text" id="descInput" placeholder="Coffee, Salary, ...">
+                </div>
+                <div class="form-field">
+                    <label><i class="fas fa-dollar-sign"></i> Amount</label>
+                    <input type="number" id="amountInput" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-field">
+                    <label><i class="fas fa-layer-group"></i> Type</label>
+                    <select id="typeSelect">
+                        <option value="expense">💸 Expense</option>
+                        <option value="income">💰 Income</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label><i class="fas fa-list"></i> Category</label>
+                    <select id="categorySelect">
+                        <option value="Food">🍔 Food</option>
+                        <option value="Transport">🚗 Transport</option>
+                        <option value="Shopping">🛍️ Shopping</option>
+                        <option value="Bills">💡 Bills</option>
+                        <option value="Entertainment">🎬 Entertainment</option>
+                        <option value="Salary">💼 Salary</option>
+                        <option value="Other">📌 Other</option>
+                    </select>
+                </div>
+                <button id="addTransactionBtn" class="add-btn"><i class="fas fa-plus-circle"></i> Add Entry</button>
+            </div>
+
+            <!-- expense list / transaction list -->
+            <div class="expense-list-container">
+                <h4><i class="fas fa-receipt"></i> Recent Transactions</h4>
+                <div id="transactionsList">
+                    <div class="empty-msg">✨ No transactions yet. Add your first expense or income!</div>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <i class="fas fa-chart-simple"></i> Track smartly · Visual insights · Secure demo
+        </footer>
+    </div>
+</div>
+
+<script>
+    // ---------- GLOBAL STATE ----------
+    let currentUser = null;          // store username (email)
+    let transactions = [];           // each: { id, desc, amount, type, category, date }
+    let categoryChart = null;
+    let trendChart = null;
+
+    // Helper: load data from localStorage for specific user
+    function loadUserData(email) {
+        const storageKey = `expenses_${email}`;
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            transactions = JSON.parse(saved);
+        } else {
+            // seed some demo transactions for new user to make graphs interesting
+            transactions = generateDemoData();
+        }
+        renderAll();
+    }
+
+    function generateDemoData() {
+        const demo = [];
+        const categories = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "Salary"];
+        const today = new Date();
+        for (let i = 0; i < 12; i++) {
+            const daysAgo = Math.floor(Math.random() * 10);
+            const date = new Date();
+            date.setDate(today.getDate() - daysAgo);
+            const isExpense = Math.random() > 0.3;
+            let amount = isExpense ? (Math.random() * 80 + 5).toFixed(2) : (Math.random() * 300 + 100).toFixed(2);
+            let type = isExpense ? "expense" : "income";
+            let cat = isExpense ? categories[Math.floor(Math.random() * 5)] : "Salary";
+            if(type === "income") cat = "Salary";
+            demo.push({
+                id: Date.now() + i + Math.random(),
+                desc: isExpense ? `Purchase ${i+1}` : "Deposit",
+                amount: parseFloat(amount),
+                type: type,
+                category: cat,
+                date: date.toISOString().split('T')[0]
+            });
+        }
+        // ensure some variety
+        demo.push({ id: Date.now()+100, desc: "Grocery", amount: 45.50, type: "expense", category: "Food", date: new Date().toISOString().split('T')[0] });
+        demo.push({ id: Date.now()+101, desc: "Freelance", amount: 420, type: "income", category: "Salary", date: new Date().toISOString().split('T')[0] });
+        return demo;
+    }
+
+    function saveUserData(email) {
+        const storageKey = `expenses_${email}`;
+        localStorage.setItem(storageKey, JSON.stringify(transactions));
+    }
+
+    // Helper computations
+    function computeStats() {
+        let totalExp = 0, totalInc = 0;
+        transactions.forEach(t => {
+            if (t.type === 'expense') totalExp += t.amount;
+            else totalInc += t.amount;
+        });
+        const balance = totalInc - totalExp;
+        return { totalExpenses: totalExp, totalIncome: totalInc, balance, count: transactions.length };
+    }
+
+    // Render stats, list, charts
+    function renderAll() {
+        if (!currentUser) return;
+        const stats = computeStats();
+        document.getElementById('totalBalance').innerHTML = `$${stats.balance.toFixed(2)}`;
+        document.getElementById('totalExpenses').innerHTML = `$${stats.totalExpenses.toFixed(2)}`;
+        document.getElementById('totalIncome').innerHTML = `$${stats.totalIncome.toFixed(2)}`;
+        document.getElementById('txnCount').innerHTML = stats.count;
+
+        renderTransactionsList();
+        updateCharts();
+    }
+
+    function renderTransactionsList() {
+        const container = document.getElementById('transactionsList');
+        if (!transactions.length) {
+            container.innerHTML = '<div class="empty-msg"><i class="fas fa-coins"></i> No records yet, start adding!</div>';
+            return;
+        }
+        // show recent first
+        const sorted = [...transactions].reverse();
+        let html = '';
+        sorted.forEach(t => {
+            const sign = t.type === 'expense' ? '-' : '+';
+            const colorClass = t.type === 'expense' ? 'expense-amount' : 'expense-amount' ;
+            const amountStyle = t.type === 'expense' ? '#b91c1c' : '#0f7b3a';
+            html += `
+                <div class="expense-item">
+                    <div>
+                        <span class="expense-desc">${escapeHtml(t.desc)}</span>
+                        <span class="expense-cat"><i class="fas fa-folder-open"></i> ${t.category}</span>
+                        <span style="font-size:0.7rem; margin-left:8px;">${t.date || 'today'}</span>
+                    </div>
+                    <div>
+                        <span class="expense-amount" style="color:${amountStyle};">${sign}$${Math.abs(t.amount).toFixed(2)}</span>
+                        <button class="delete-expense" data-id="${t.id}"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        // attach delete events
+        document.querySelectorAll('.delete-expense').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = Number(btn.getAttribute('data-id'));
+                deleteTransactionById(id);
+            });
+        });
+    }
+
+    function deleteTransactionById(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        if (currentUser) saveUserData(currentUser);
+        renderAll();
+    }
+
+    function addTransaction(desc, amount, type, category) {
+        if (!desc.trim()) desc = "Untitled";
+        if (isNaN(amount) || amount <= 0) return false;
+        const newTxn = {
+            id: Date.now() + Math.floor(Math.random() * 10000),
+            desc: desc.trim(),
+            amount: parseFloat(amount),
+            type: type,
+            category: category,
+            date: new Date().toISOString().split('T')[0]
+        };
+        transactions.push(newTxn);
+        if (currentUser) saveUserData(currentUser);
+        renderAll();
+        return true;
+    }
+
+    // charts: expense by category (pie) + last 7 days expense trend (line)
+    function updateCharts() {
+        // only expenses for pie
+        const expenses = transactions.filter(t => t.type === 'expense');
+        const catMap = new Map();
+        expenses.forEach(exp => {
+            catMap.set(exp.category, (catMap.get(exp.category) || 0) + exp.amount);
+        });
+        const categories = Array.from(catMap.keys());
+        const expenseAmounts = categories.map(c => catMap.get(c));
+
+        if (categoryChart) categoryChart.destroy();
+        const ctxPie = document.getElementById('categoryChart').getContext('2d');
+        categoryChart = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: categories.length ? categories : ['No Data'],
+                datasets: [{
+                    data: categories.length ? expenseAmounts : [1],
+                    backgroundColor: ['#f97316', '#3b82f6', '#10b981', '#facc15', '#a855f7', '#ef4444', '#64748b'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // trend: last 7 days expense total
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            last7Days.push(dateStr);
+        }
+        const dailyExpense = new Array(7).fill(0);
+        transactions.forEach(t => {
+            if (t.type === 'expense' && t.date) {
+                const idx = last7Days.indexOf(t.date);
+                if (idx !== -1) dailyExpense[idx] += t.amount;
+            }
+        });
+        if (trendChart) trendChart.destroy();
+        const ctxLine = document.getElementById('trendChart').getContext('2d');
+        trendChart = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: last7Days.map(d => d.slice(5)),
+                datasets: [{
+                    label: 'Daily Expenses ($)',
+                    data: dailyExpense,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239,68,68,0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#f97316'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ---------- LOGIN SYSTEM ----------
+    function login(email, password) {
+        if (!email || email.trim() === "") return false;
+        const normalizedEmail = email.trim().toLowerCase();
+        // any non-empty login works, we store user data individually
+        currentUser = normalizedEmail;
+        localStorage.setItem('spark_current_user', currentUser);
+        // load that user's transaction data
+        loadUserData(currentUser);
+        // switch UI
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('trackerDashboard').style.display = 'block';
+        const greetingSpan = document.getElementById('greetingUser');
+        greetingSpan.innerHTML = `<i class="fas fa-user-astronaut"></i> ${currentUser.split('@')[0]}`;
+        const logoutGlobal = document.getElementById('globalLogoutBtn');
+        logoutGlobal.style.display = 'inline-block';
+        // update greeting
+        renderAll();
+        return true;
+    }
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('spark_current_user');
+        transactions = [];
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('trackerDashboard').style.display = 'none';
+        document.getElementById('globalLogoutBtn').style.display = 'none';
+        document.getElementById('greetingUser').innerHTML = 'Guest';
+        // reset charts to avoid errors
+        if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+        if (trendChart) { trendChart.destroy(); trendChart = null; }
+    }
+
+    function checkAutoLogin() {
+        const savedUser = localStorage.getItem('spark_current_user');
+        if (savedUser) {
+            login(savedUser, "dummy");
+        } else {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('trackerDashboard').style.display = 'none';
+        }
+    }
+
+    // ---------- EVENT LISTENERS ----------
+    document.getElementById('loginBtn').addEventListener('click', () => {
+        const email = document.getElementById('loginEmail').value;
+        const pwd = document.getElementById('loginPassword').value;
+        if (email.trim() === "") {
+            alert("Please enter email");
+            return;
+        }
+        login(email, pwd);
+    });
+
+    document.getElementById('globalLogoutBtn').addEventListener('click', () => {
+        logout();
+    });
+
+    document.getElementById('addTransactionBtn').addEventListener('click', () => {
+        const desc = document.getElementById('descInput').value;
+        let amount = parseFloat(document.getElementById('amountInput').value);
+        const type = document.getElementById('typeSelect').value;
+        let category = document.getElementById('categorySelect').value;
+        if (type === 'income' && (category === 'Food' || category === 'Transport' || category === 'Shopping' || category === 'Bills' || category === 'Entertainment')) {
+            category = "Salary";
+        }
+        if (isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid positive amount");
+            return;
+        }
+        addTransaction(desc, amount, type, category);
+        // clear amount and desc
+        document.getElementById('amountInput').value = '';
+        document.getElementById('descInput').value = '';
+    });
+
+    // initialize UI
+    checkAutoLogin();
+    // if logged in already, make sure we have chart instances
+    window.addEventListener('load', () => {
+        if (currentUser) {
+            renderAll();
+        }
+    });
+</script>
+</body>
+</html>
